@@ -4,7 +4,19 @@ import redis
 from typing import Union, Callable, Optional
 import uuid
 import sys
+from functools import wraps
 Unionsbif = Union[str, bytes, int, float]
+
+
+def count_calls(method: Callable) -> Callable:
+    """decorator that counts no of times cache method is called"""
+    key = method.__qualname__
+    @wraps(method)
+    def wrapper(self, *args, **kwargs):
+        """Wrapper method"""
+        self._redis.incr(key)
+        return method(self, *args, **kwargs)
+    return wrapper
 
 
 class Cache:
@@ -14,6 +26,7 @@ class Cache:
         self._redis = redis.Redis()
         self._redis.flushdb()
 
+    @count_calls
     def store(self, data: Unionsbif) -> str:
         """creates key id and stores data in redis"""
         key = str(uuid.uuid4())
