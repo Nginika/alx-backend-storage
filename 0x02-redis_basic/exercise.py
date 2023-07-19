@@ -33,6 +33,7 @@ def call_history(method: Callable) -> Callable:
         return out
     return wrapper
 
+
 def replay(method: Callable) -> None:
     """
     Replays the history of a function
