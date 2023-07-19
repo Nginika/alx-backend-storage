@@ -26,9 +26,3 @@ def get_page(url: str) -> str:
     r.incr(f"count:{url}")
 
     return response.text
-
-
-if __name__ == "__main__":
-    url = 'http://slowwly.robertomurray.co.uk'
-    page_content = get_page(url)
-    print(page_content)
