@@ -1,28 +1,37 @@
 #!/usr/bin/env python3
-"""implement a get_page function (prototype: def get_page(url: str) -> str:).
-The core of the function is very simple. It uses the requests module
-to obtain the HTML content of a particular URL and returns it."""
+"""
+Implements an expiring web cache and tracker
+"""
+from typing import Callable
+from functools import wraps
 import redis
 import requests
 
-# Redis connection
-r = redis.Redis()
+redis_client = redis.Redis()
 
 
+def url_count(method: Callable) -> Callable:
+    """counts how many times an url is accessed"""
+    @wraps(method)
+    def wrapper(*args, **kwargs):
+        url = args[0]
+        redis_client.incr(f"count:{url}")
+        cached = redis_client.get(url)  # Remove unnecessary f-string
+        if cached:
+            return cached.decode('utf-8')
+        response = method(url)  # Fetch the page content
+        redis_client.setex(url, 10, response)  # Fix setex arguments
+        return response
+
+    return wrapper
+
+
+@url_count
 def get_page(url: str) -> str:
-    """ Check if the URL content is already cached"""
-    cached_content = r.get(f"cached:{url}")
-    if cached_content:
-        # URL content found in cache, return it
-        return cached_content.decode('utf-8')
-
-    # If URL content is not in cache, fetch it
+    """get a page and cache value"""
     response = requests.get(url)
-
-    # Cache the content with an expiration time of 10 seconds
-    r.setex(f"cached:{url}", 10, response.text)
-
-    # Increment the count for the URL access
-    r.incr(f"count:{url}")
-
     return response.text
+
+
+if __name__ == "__main__":
+    print(get_page('http://slowwly.robertomurray.co.uk'))
