@@ -3,16 +3,17 @@
 import redis
 import requests
 r = redis.Redis()
-#count = 0
+
 
 def get_page(url: str) -> str:
     """uses the requests module to obtain the HTML content of a
     particular URL and returns it"""
     # r.set(f"cached:{url}", count)
 
-    if r.get(f"count:{url}") :
+    if r.get(f"count:{url}"):
         r.incr(f"count:{url}")
-    else :
+        r.expire(f"count:{url}", 10)
+    else:
         r.setex(f"count:{url}", 10, 1)
 
     req = requests.get(url)
